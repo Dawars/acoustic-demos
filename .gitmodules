@@ -1,0 +1,15 @@
+[submodule "libs/mmg"]
+	path = libs/mmg
+	url = https://github.com/MmgTools/mmg.git
+[submodule "libs/fmt"]
+	path = libs/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "libs/tetgen"]
+	path = libs/tetgen
+	url = https://github.com/ufz/tetgen.git
+[submodule "libs/polyscope"]
+	path = libs/polyscope
+	url = https://github.com/nmwsharp/polyscope.git
+[submodule "libs/geometry-central"]
+	path = libs/geometry-central
+	url = https://github.com/nmwsharp/geometry-central.git
