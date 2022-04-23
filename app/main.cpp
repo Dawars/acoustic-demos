@@ -10,6 +10,7 @@
 
 #include "polyscope/polyscope.h"
 #include "polyscope/surface_mesh.h"
+#include "igl/readOBJ.h"
 
 #include "imgui.h"
 
@@ -18,10 +19,6 @@
 
 using namespace geometrycentral;
 using namespace geometrycentral::surface;
-
-// == Geometry-central data
-std::unique_ptr<ManifoldSurfaceMesh> mesh;
-std::unique_ptr<VertexPositionGeometry> geometry;
 
 // Polyscope visualization handle, to quickly add data to the surface
 polyscope::SurfaceMesh *psMesh;
@@ -35,10 +32,10 @@ void doWork() {
     polyscope::warning("Computing Gaussian curvature.\nalso, parameter value = " +
                        std::to_string(param1));
 
-    geometry->requireVertexGaussianCurvatures();
-    psMesh->addVertexScalarQuantity("curvature",
-                                    geometry->vertexGaussianCurvatures,
-                                    polyscope::DataType::SYMMETRIC);
+//    geometry->requireVertexGaussianCurvatures();
+//    psMesh->addVertexScalarQuantity("curvature",
+//                                    geometry->vertexGaussianCurvatures,
+//                                    polyscope::DataType::SYMMETRIC);
 }
 
 // A user-defined callback, for creating control panels (etc)
@@ -54,7 +51,10 @@ void myCallback() {
 }
 
 int main(int argc, char **argv) {
-    std::string inputFilename = "./data/bridge.stl";
+
+    acoustics::eigen_frequency obj;
+
+    std::string inputFilename = "./data/bridge.obj";
 
     // Initialize polyscope
     polyscope::init();
@@ -62,26 +62,29 @@ int main(int argc, char **argv) {
     // Set the callback function
     polyscope::state::userCallback = myCallback;
 
-    // Load mesh
-    std::tie(mesh, geometry) = readManifoldSurfaceMesh(inputFilename);
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+
+    igl::readOBJ(inputFilename, V,  F);
+
+    tetgenio tet_input = acoustics::eigen_frequency::getTetgenMesh(V, F);
+
+    tet_input.save_nodes("input");
+    tet_input.save_poly("input");
+
+//    obj.test(tet_input);
 
     // Register the mesh with polyscope
     psMesh = polyscope::registerSurfaceMesh(
             polyscope::guessNiceNameFromPath(inputFilename),
-            geometry->inputVertexPositions, mesh->getFaceVertexList(),
-            polyscopePermutations(*mesh));
+            V, F);
 
-    // Set vertex tangent spaces
-    geometry->requireVertexTangentBasis();
-    VertexData<Vector3> vBasisX(*mesh);
-    for (Vertex v : mesh->vertices()) {
-        vBasisX[v] = geometry->vertexTangentBasis[v][0];
-    }
-    psMesh->setVertexTangentBasisX(vBasisX);
 
-    auto vField =
-            geometrycentral::surface::computeSmoothestVertexDirectionField(*geometry);
-    psMesh->addVertexIntrinsicVectorQuantity("VF", vField);
+//    psMesh->setVertexTangentBasisX(vBasisX);
+
+//    auto vField =
+//            geometrycentral::surface::computeSmoothestVertexDirectionField(*geometry);
+//    psMesh->addVertexIntrinsicVectorQuantity("VF", vField);
 
     // Give control to the polyscope gui
     polyscope::show();
