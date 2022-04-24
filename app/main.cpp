@@ -10,7 +10,8 @@
 
 #include "polyscope/polyscope.h"
 #include "polyscope/surface_mesh.h"
-#include "igl/readOBJ.h"
+#include "polyscope/volume_mesh.h"
+#include "igl/readMESH.h"
 
 #include "imgui.h"
 
@@ -62,22 +63,50 @@ int main(int argc, char **argv) {
     // Set the callback function
     polyscope::state::userCallback = myCallback;
 
+    /*
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
-
     igl::readOBJ(inputFilename, V,  F);
+*/
 
-    tetgenio tet_input = acoustics::eigen_frequency::getTetgenMesh(V, F);
+    // Read mesh from file
+    Eigen::MatrixXd V; // vertex positions
+    Eigen::MatrixXi T; // tetrahedra
+    Eigen::MatrixXi F; // faces (we don't use these here)
+    igl::readMESH("data/bridge.1.mesh", V, T, F);
+//
+    // Register the volume mesh with Polyscope
+    polyscope::registerTetMesh("bridge_volume", V, T);
+
+    // Add a scalar quantity
+    size_t nVerts = V.rows();
+    std::vector<double> scalarV(nVerts);
+    for (size_t i = 0; i < nVerts; i++) {
+        // use the x-coordinate of vertex position as a test function
+        scalarV[i] = V(i,0);
+    }
+    polyscope::getVolumeMesh("bridge_volume")->addVertexScalarQuantity("scalar Q", scalarV);
 
     tet_input.save_nodes("input");
     tet_input.save_poly("input");
 
+    // Register the mesh with polyscope
+    psMesh = polyscope::registerSurfaceMesh("bridge",
+            geometry->inputVertexPositions, mesh->getFaceVertexList(),
+            polyscopePermutations(*mesh));
+*/
+
+//    tetgenio tet_input = acoustics::eigen_frequency::getTetgenMesh(V, F);
+//
+//    tet_input.save_nodes("input");
+//    tet_input.save_poly("input");
+//
 //    obj.test(tet_input);
 
     // Register the mesh with polyscope
-    psMesh = polyscope::registerSurfaceMesh(
-            polyscope::guessNiceNameFromPath(inputFilename),
-            V, F);
+//    psMesh = polyscope::registerSurfaceMesh(
+//            polyscope::guessNiceNameFromPath(inputFilename),
+//            V, F);
 
 
 //    psMesh->setVertexTangentBasisX(vBasisX);
